@@ -11,7 +11,14 @@ function loadFile(file::String)
     end
 end
 
-function loadData(directory::String, feature_names::Array{String,1}, type::String)
+function loadFeatureData(directory::String, feature_names::Array{String,1}, type::String)
     data = [hcat(loadFile(string(directory, "/", feature, "_", type, ".txt"))...) for feature in feature_names]
     permutedims(reshape(vcat(data...), 128, size(feature_names)..., :), (2, 1, 3))
+end
+
+function loadLabelData(file::String)
+    toInt(line) = parse(Int32, line)
+    open(file) do data
+        [toInt(line) for line in eachline(data)]
+    end
 end
