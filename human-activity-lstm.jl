@@ -37,7 +37,6 @@ using Flux.Data: DataLoader
 train_loader = DataLoader((X_train, y_train), batchsize=32, shuffle=true)
 
 # Build model
-
 using Flux
 using Flux: @epochs
 using Flux.Losses
@@ -49,8 +48,6 @@ model = Chain(
     Dense(16, 6),
     softmax
 )
-
-opt = ADAM()
 
 apply(model, x) = last(map(model, [view(x, :, t, :) for t in 1:128]))
 
@@ -70,12 +67,17 @@ function loss(x, y)
 end
 
 function train()
+    opt = ADAM()
     Flux.reset!(model)
     @epochs 5 Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
 end
 
 train()
 
-y_pred = apply(model, X_test)
+# Final evaulation and minimum accuracy needed to beat "guess only most often class"
 
-accuracy(y_pred, y_test)
+hist = reshape(sum(y_train, dims=2), :)
+print("Minimum needed accuracy: $(maximum(hist)/sum(hist))")
+
+y_pred = apply(model, X_test)
+print("Actual accurcy $(accuracy(y_pred, y_test))")
