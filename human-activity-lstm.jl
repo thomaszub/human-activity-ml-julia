@@ -51,12 +51,10 @@ model = Chain(
 opt = ADAM()
 
 function loss(x, y)
-    println()
-    println(size(x))
-    println(size(y))
-    yh = model.(x)
-    println(size(yh))
-    sum(logitcrossentropy.(yh, y))
+    yh = last(map(model, [view(x, :, t, :) for t in 1:128]))
+    l = logitcrossentropy(yh, y)
+    Flux.reset!(model)
+    l
 end
 
 
