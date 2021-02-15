@@ -26,37 +26,56 @@ include("data-processing.jl")
 X_train = loadFeatureData(dir_train, feature_names, "train")
 X_test = loadFeatureData(dir_test, feature_names, "test")
 
-y_train = loadLabelData("data/UCI HAR Dataset/train/y_train.txt")
-y_test = loadLabelData("data/UCI HAR Dataset/test/y_test.txt")
-yh_train = onehotbatch(y_train, 1:6)
-yh_test = onehotbatch(y_test, 1:6)
+y_labels_train = loadLabelData("data/UCI HAR Dataset/train/y_train.txt")
+y_labels_test = loadLabelData("data/UCI HAR Dataset/test/y_test.txt")
+y_train = onehotbatch(y_labels_train, 1:6)
+y_test = onehotbatch(y_labels_test, 1:6)
 
 # Prepare batch loader for train data
 using Flux.Data: DataLoader
 
-train_loader = DataLoader((X_train, yh_train), batchsize=32, shuffle=true)
+train_loader = DataLoader((X_train, y_train), batchsize=32, shuffle=true)
 
 # Build model
 
 using Flux
 using Flux: @epochs
 using Flux.Losses
+using Statistics: mean
 
 model = Chain(
-    LSTM(9, 9),
-    Dense(9, 6),
+    LSTM(9, 32),
+    Dense(32, 16, relu),
+    Dense(16, 6),
     softmax
 )
 
 opt = ADAM()
 
+apply(model, x) = last(map(model, [view(x, :, t, :) for t in 1:128]))
+
+accuracy(y_pred, y) = mean(Flux.onecold(y_pred) .== Flux.onecold(y))
+
+function evalcb()
+    y_pred = apply(model, X_test)
+    println("Loss: $(crossentropy(y_pred, y_test)), Accuracy: $(accuracy(y_pred, y_test))" )
+    Flux.reset!(model)
+end
+
 function loss(x, y)
-    yh = last(map(model, [view(x, :, t, :) for t in 1:128]))
-    l = logitcrossentropy(yh, y)
+    y_pred = apply(model, x)
+    l = crossentropy(y_pred, y)
     Flux.reset!(model)
     l
 end
 
+function train()
+    Flux.reset!(model)
+    @epochs 5 Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
+end
 
-#@epochs 2
-Flux.train!(loss, params(model), train_loader, opt)
+train()
+
+y_pred = apply(model, X_test)
+
+accuracy(y_pred, y_test)
