@@ -54,8 +54,8 @@ apply(model, x) = last(map(model, [view(x, :, t, :) for t in 1:128]))
 accuracy(y_pred, y) = mean(Flux.onecold(y_pred) .== Flux.onecold(y))
 
 function evalcb()
-    y_pred = apply(model, X_test)
-    println("Loss: $(crossentropy(y_pred, y_test)), Accuracy: $(accuracy(y_pred, y_test))" )
+    y_pred = apply(model, X_train)
+    println("Loss: $(crossentropy(y_pred, y_train)), Accuracy: $(accuracy(y_pred, y_train))" )
     Flux.reset!(model)
 end
 
@@ -69,13 +69,12 @@ end
 function train()
     opt = ADAM()
     Flux.reset!(model)
-    @epochs 5 Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
+    @epochs 10 Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
 end
 
 train()
 
 # Final evaulation and minimum accuracy needed to beat "guess only most often class"
-
 hist = reshape(sum(y_train, dims=2), :)
 print("Minimum needed accuracy: $(maximum(hist)/sum(hist))")
 
