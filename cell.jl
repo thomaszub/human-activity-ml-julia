@@ -11,7 +11,8 @@ mutable struct ORNNCell{A,V}
 end
 
 function ORNNCell(in::Integer, out::Integer;
-                  init = Flux.glorot_uniform, initb = Flux.zeros)
+                  init = Flux.glorot_uniform,
+                  initb = Flux.zeros)
   cell = ORNNCell(
           init(out * 3, in),
           init(out * 3, out),
@@ -24,8 +25,8 @@ function ORNNCell(in::Integer, out::Integer;
 end
 
 function (m::ORNNCell)((h, c), x)
-  b, o = m.b, size(h, 1)
-  g = m.Wi*x .+ m.Wh*h .+ b
+  o = size(h, 1)
+  g = m.Wi*x .+ m.Wh*h .+ m.b
   forget = σ.(gate(g, o, 1))
   cell = tanh.(gate(g, o, 2))
   output = σ.(gate(g, o, 3))
