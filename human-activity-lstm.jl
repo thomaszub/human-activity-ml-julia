@@ -42,8 +42,10 @@ using Flux: @epochs
 using Flux.Losses
 using Statistics: mean
 
+include("cell.jl")
+
 model = Chain(
-    LSTM(9, 32),
+    ORNN(9, 32),
     Dense(32, 16, relu),
     Dense(16, 6),
     softmax
