@@ -55,7 +55,7 @@ accuracy(y_pred, y) = mean(Flux.onecold(y_pred) .== Flux.onecold(y))
 
 function evalcb()
     y_pred = apply(model, X_train)
-    println("Loss: $(crossentropy(y_pred, y_train)), Accuracy: $(accuracy(y_pred, y_train))" )
+    @info "Loss: $(crossentropy(y_pred, y_train)), Accuracy: $(accuracy(y_pred, y_train))"
     Flux.reset!(model)
 end
 
@@ -69,7 +69,7 @@ end
 function train()
     opt = ADAM()
     Flux.reset!(model)
-    @epochs 10 Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
+    @epochs 10 @time Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
 end
 
 train()
