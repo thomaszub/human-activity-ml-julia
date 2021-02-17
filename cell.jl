@@ -6,7 +6,6 @@ mutable struct ORNNCell{A,V}
   Wi::A
   Wh::A
   b::V
-  h::V
   c::V
 end
 
@@ -17,25 +16,24 @@ function ORNNCell(in::Integer, out::Integer;
           init(out * 3, in),
           init(out * 3, out),
           init(out * 3),
-          initb(out),
           initb(out)
   )
-  cell.b[gate(out, 2)] .= 1
+  cell.b[gate(out, 1)] .= 1
   return cell
 end
 
-function (m::ORNNCell)((h, c), x)
-  o = size(h, 1)
-  g = m.Wi*x .+ m.Wh*h .+ m.b
+function (m::ORNNCell)(c, x)
+  o = size(c, 1)
+  g = m.Wi*x .+ m.Wh*c .+ m.b
   forget = σ.(gate(g, o, 1))
-  cell = tanh.(gate(g, o, 2))
-  output = σ.(gate(g, o, 3))
+  output = σ.(gate(g, o, 2))
+  cell = tanh.(gate(g, o, 3))
   c = forget .* c .- (forget .- 1) .* cell
-  h′ = output .* tanh.(c)
-  return (h′, c), h′
+  h = output .* tanh.(c)
+  return c, h
 end
 
-Flux.hidden(m::ORNNCell) = (m.h, m.c)
+Flux.hidden(m::ORNNCell) = m.c
 
 @functor ORNNCell
 
