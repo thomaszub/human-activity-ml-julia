@@ -32,7 +32,7 @@ function (m::ORNNCell)(c, x)
   output = σ.(gate(g, o, 2))
   cell = m.act.(gate(g, o, 3))
   c = forget .* c .- (forget .- 1) .* cell
-  h = output .* m.act.(c)
+  h = output .* c
   return c, h
 end
 
