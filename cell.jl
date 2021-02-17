@@ -29,7 +29,7 @@ function (m::ORNNCell)(c, x)
   o = size(c, 1)
   g = m.Wi*x .+ m.Wh*c .+ m.b
   forget = σ.(gate(g, o, 1))
-  cell = m.act.(gate(g, o, 2))
+  cell = gate(g, o, 2)
   c = forget .* c .- (forget .- 1) .* cell
   h = m.act.(gate(g, o, 3))
   return c, h
