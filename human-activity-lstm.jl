@@ -45,7 +45,7 @@ using Statistics: mean
 include("cell.jl")
 
 model = Chain(
-    ORNN(9, 32),
+    ORNN(9, 32, activation = relu),
     Dense(32, 16, relu),
     Dense(16, 6),
     softmax
