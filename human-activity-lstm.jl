@@ -49,26 +49,25 @@ model = Chain(
     softmax
 )
 
-apply(model, x) = last(map(model, [view(x, :, t, :) for t in 1:128]))
+function apply(model, x)
+    Flux.reset!(model)
+    last(map(model, [view(x, :, t, :) for t in 1:128]))
+end
 
 accuracy(y_pred, y) = mean(Flux.onecold(y_pred) .== Flux.onecold(y))
 
 function evalcb()
     y_pred = apply(model, X_train)
     @info "Loss: $(crossentropy(y_pred, y_train)), Accuracy: $(accuracy(y_pred, y_train))"
-    Flux.reset!(model)
 end
 
 function loss(x, y)
     y_pred = apply(model, x)
-    l = crossentropy(y_pred, y)
-    Flux.reset!(model)
-    l
+    crossentropy(y_pred, y)
 end
 
 function train()
     opt = ADAM()
-    Flux.reset!(model)
     @epochs 10 @time Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
 end
 
