@@ -13,14 +13,14 @@ end
 
 function ORNNCell(in::Integer, out::Integer;
                   init = Flux.glorot_uniform,
-                  initb = Flux.zeros,
+                  init_cell = Flux.zeros,
                   σ_c = relu,
                   σ_h = tanh)
   cell = ORNNCell(
           init(out * 3, in),
           init(out * 3, out),
           init(out * 3),
-          initb(out),
+          init_cell(out),
           σ_c,
           σ_h
   )
