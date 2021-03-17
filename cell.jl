@@ -2,25 +2,30 @@
 
 using Flux: @functor, gate, Recur
 
+Flux.gate(h, n, size) = (1:size) .+ h*(n-1)
+Flux.gate(x::AbstractVector, h, n, size) = @view x[gate(h,n,size)]
+Flux.gate(x::AbstractMatrix, h, n, size) = x[gate(h,n,size),:]
+
 mutable struct ORNNCell{A,V,S,T}
-  Wi::A
-  Wh::A
+  Wx::A
+  Wc::A
   b::V
   c::V
   σ_c::S
   σ_h::T
 end
 
-function ORNNCell(in::Integer, out::Integer;
+function ORNNCell(in::Integer, cell::Integer, out::Integer;
                   init = Flux.glorot_uniform,
                   init_cell = Flux.zeros,
                   σ_c = relu,
                   σ_h = tanh)
+  agg_size = 2 * cell + out
   cell = ORNNCell(
-          init(out * 3, in),
-          init(out * 3, out),
-          init(out * 3),
-          init_cell(out),
+          init(agg_size, in),
+          init(agg_size, cell),
+          init(agg_size),
+          init_cell(cell),
           σ_c,
           σ_h
   )
@@ -29,12 +34,13 @@ function ORNNCell(in::Integer, out::Integer;
 end
 
 function (m::ORNNCell)(c, x)
-  o = size(c, 1)
-  g = m.Wi*x .+ m.Wh*c .+ m.b
-  forget = σ.(gate(g, o, 1))
-  cell = m.σ_c.(gate(g, o, 2))
+  o_c = size(m.Wc, 2)
+  o_h = size(m.Wc, 1) - 2 * o_c
+  g = m.Wx*x .+ m.Wc*c .+ m.b
+  forget = σ.(gate(g, o_c, 1))
+  cell = m.σ_c.(gate(g, o_c, 2))
   c = forget .* c .- (forget .- 1) .* cell
-  h = m.σ_h.(gate(g, o, 3))
+  h = m.σ_h.(gate(g, o_c, 3, o_h))
   return c, h
 end
 
@@ -43,6 +49,6 @@ Flux.hidden(m::ORNNCell) = m.c
 @functor ORNNCell
 
 Base.show(io::IO, l::ORNNCell) =
-  print(io, "ORNNCell(", size(l.Wi, 2), ", ", size(l.Wi, 1)÷3, ", ", l.σ_c , ", ", l.σ_h, ")")
+  print(io, "ORNNCell(", size(l.Wx, 2), ", ", size(l.Wc, 2), ", ", size(l.Wc, 1) - 2 * size(l.Wc, 2), ", ", l.σ_c , ", ", l.σ_h, ")")
 
 ORNN(a...; ka...) = Recur(ORNNCell(a...; ka...))
