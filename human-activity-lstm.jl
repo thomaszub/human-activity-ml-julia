@@ -45,9 +45,10 @@ using Statistics: mean
 include("cell.jl")
 
 model = Chain(
-    ORNN(9, 32, 32),
-    Dense(32, 16, relu),
-    Dense(16, 6),
+    ORNN(9, 128, 64),
+    Dropout(0.5),
+    Dense(64, 32, relu),
+    Dense(32, 6),
     softmax
 )
 
@@ -69,8 +70,10 @@ function loss(x, y)
 end
 
 function train()
+    trainmode!(model)
     opt = ADAM()
     @epochs 10 @time Flux.train!(loss, params(model), train_loader, opt, cb = Flux.throttle(evalcb, 5))
+    testmode!(model)
 end
 
 train()
