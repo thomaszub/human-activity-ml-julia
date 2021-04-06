@@ -74,7 +74,8 @@ end
 train()
 
 # Final evaulation and minimum accuracy needed to beat "guess only most often class"
-hist = reshape(sum(y_train, dims=2), :)
+hist = reshape(sum(y_test, dims=2), :)
+print("Distribution: $(hist/sum(hist))")
 print("Minimum needed accuracy: $(maximum(hist)/sum(hist))")
 
 y_pred = apply(model, X_test)
